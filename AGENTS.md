@@ -35,6 +35,7 @@ use the editor.
 - Live machine readings come from `src/lib/telemetry.ts` (simulated) until real PLC connectors exist; replace that module's source, not the pages.
 - AI calls (search, paper-form scanning) are authenticated server functions in `src/lib/ai.functions.ts`; gateway setup stays in `src/lib/ai.server.ts`.
 - Excel workbooks are parsed in the browser and saved as spreadsheet paper_records with sheets and row numbers; AI search selects a workbook explicitly to avoid silently truncating spreadsheet context.
+- Paperwork previews use the stored record data; one shared workbook viewer handles imports and saved files without modifying their contents.
 - Operator invitations use email-bound, expiring tokens and database-authorized acceptance; invitation links are shared by managers, not automatically emailed.
 - Saved chat uses route-derived thread IDs, account/plant-scoped RLS, AI SDK UIMessage parts and an authenticated streaming HTTP boundary; only verified server completions count as AI savings activity.
 - Savings use a separate activity ledger for new saved paperwork and successful AI answers, excluding seeded/history records; pure estimation formulas live in src/lib/savings.ts with tests.

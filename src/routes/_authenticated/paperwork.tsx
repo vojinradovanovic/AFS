@@ -3,12 +3,13 @@ import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-q
 import { useServerFn } from "@tanstack/react-start";
 import { useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
-import { AlertTriangle, Camera, CheckCircle2, Plus, Loader2, FileSpreadsheet } from "lucide-react";
+import { AlertTriangle, Camera, CheckCircle2, Plus, Loader2, FileSpreadsheet, Eye } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { accessQuery, machinesQuery, recordsQuery, type PaperRecord } from "@/lib/queries";
 import { flagBatchSheet, flagChangeover, flagWeightCheck } from "@/lib/rules";
 import { extractPaper, type Extracted } from "@/lib/ai.functions";
 import { PageHeader, Stat, headMeta } from "@/components/afs/page";
+import { PaperworkPreview, WorkbookView } from "@/components/afs/paperwork-preview";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -82,7 +83,7 @@ function Paperwork() {
   const machine = machines.find((m) => m.id === machineId);
   const [workbook, setWorkbook] = useState<SpreadsheetData | null>(null);
   const [importing, setImporting] = useState(false);
-  const [sheet, setSheet] = useState(0);
+  const [previewRecord, setPreviewRecord] = useState<PaperRecord | null>(null);
   const excelRef = useRef<HTMLInputElement>(null);
   const { data: records } = useSuspenseQuery(recordsQuery);
   const [filter, setFilter] = useState<RType | "all" | "flagged" | "spreadsheet">("all");
@@ -132,7 +133,7 @@ function Paperwork() {
 
   async function importFile(file: File) {
     setImporting(true);
-    try { setWorkbook(await readSpreadsheet(file)); setSheet(0); }
+    try { setWorkbook(await readSpreadsheet(file)); }
     catch (e) { toast.error(e instanceof Error ? e.message : "Could not read workbook"); }
     finally { setImporting(false); }
   }
@@ -191,17 +192,17 @@ function Paperwork() {
       </div>
       <div className="px-8 py-4">
         <div className="panel divide-y divide-border">
-          {shown.map((r) => <RecordRow key={r.id} r={r} />)}
+          {shown.map((r) => <RecordRow key={r.id} r={r} onPreview={() => setPreviewRecord(r)} />)}
           {!shown.length && <div className="p-8 text-center text-sm text-muted-foreground">No entries yet.</div>}
         </div>
       </div>
 
+      <PaperworkPreview record={previewRecord} onClose={() => setPreviewRecord(null)} />
       <Dialog open={!!workbook} onOpenChange={(o) => !o && setWorkbook(null)}>
-        <DialogContent className="max-w-4xl">
+        <DialogContent className="flex h-[85dvh] max-h-[85dvh] w-[calc(100%-2rem)] max-w-5xl flex-col overflow-hidden">
           <DialogHeader><DialogTitle>{workbook?.filename}</DialogTitle></DialogHeader>
           {machineSelector}
-          <select aria-label="Workbook sheet" className="rounded-md border border-input bg-background p-2 text-sm" value={sheet} onChange={(e) => setSheet(Number(e.target.value))}>{workbook?.sheets.map((s, i) => <option key={s.name} value={i}>{s.name} · {s.rows.length} rows</option>)}</select>
-          <div className="max-h-80 overflow-auto"><table className="w-full text-left text-xs"><tbody>{workbook?.sheets[sheet]?.rows.slice(0, 20).map((r, i) => <tr key={i} className="border-b border-border"><th className="bg-secondary p-2">{i + 1}</th>{r.map((c, j) => <td key={j} className="max-w-64 truncate border-r border-border p-2" title={c}>{c}</td>)}</tr>)}</tbody></table></div>
+          {workbook && <WorkbookView key={workbook.filename} workbook={workbook} />}
           <div className="flex justify-end gap-2"><Button variant="ghost" onClick={() => setWorkbook(null)}>Cancel</Button><Button disabled={importing} onClick={saveWorkbook}>Save workbook</Button></div>
         </DialogContent>
       </Dialog>
@@ -281,7 +282,7 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
   return <div className="space-y-1.5"><Label className="text-xs text-muted-foreground">{label}</Label>{children}</div>;
 }
 
-function RecordRow({ r }: { r: PaperRecord }) {
+function RecordRow({ r, onPreview }: { r: PaperRecord; onPreview: () => void }) {
   const d = r.data as { sheets?: { name: string; rows: string[][] }[]; product?: string; target?: number; tolerance?: number; samples?: number[]; batch?: string; mix_temp_c?: number; from?: string; to?: string; minutes?: number; machine?: string; reason?: string };
   const flags = r.flags as string[];
   const summary =
@@ -303,6 +304,7 @@ function RecordRow({ r }: { r: PaperRecord }) {
         {flags.length > 0 && <div className="mt-1 text-xs text-warning">{flags.join(" · ")}</div>}
       </div>
       <div className="text-right text-xs text-muted-foreground">
+        <Button size="sm" variant="outline" className="mb-2 mr-2" onClick={onPreview}><Eye /> Preview</Button>
         {r.record_type === "spreadsheet" && <Button asChild size="sm" variant="outline" className="mb-2"><Link to="/search" search={{ record: r.id }}>Ask about file</Link></Button>}
         <div>{r.line}</div>
         <div className="num">{new Date(r.recorded_at).toLocaleString()}</div>

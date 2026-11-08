@@ -1,5 +1,15 @@
 export type SheetData = { name: string; rows: string[][] };
 export type SpreadsheetData = { filename: string; sheets: SheetData[] };
+// A title row can follow leading blank rows. Numeric-only data is not a header.
+export function detectHeaderRow(sheet: SheetData): number | null {
+  const index = sheet.rows.findIndex((row) => row.some((cell) => cell.trim()));
+  if (index < 0) return null;
+  const row = sheet.rows[index];
+  if (!row) return null;
+  const cells = row.filter((cell) => cell.trim());
+  const titles = cells.filter((cell) => /[a-zA-Z]/.test(cell) && !Number.isFinite(Number(cell)));
+  return cells.length >= 2 && titles.length / cells.length >= 0.75 ? index : null;
+}
 export async function readSpreadsheet(file: File): Promise<SpreadsheetData> {
   if (!file.name.toLowerCase().endsWith(".xlsx")) throw new Error("Choose an .xlsx workbook. Save older .xls files as .xlsx first.");
   if (file.size > 5_000_000) throw new Error("Workbook is too large (maximum 5 MB).");
