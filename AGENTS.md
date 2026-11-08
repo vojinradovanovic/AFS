@@ -39,3 +39,5 @@ use the editor.
 - Saved chat uses route-derived thread IDs, account/plant-scoped RLS, AI SDK UIMessage parts and an authenticated streaming HTTP boundary; only verified server completions count as AI savings activity.
 - Savings use a separate activity ledger for new saved paperwork and successful AI answers, excluding seeded/history records; pure estimation formulas live in src/lib/savings.ts with tests.
 - Chat reload retains reasoning UI parts, but model replay uses complete plain-text history to avoid deployment-bound encrypted reasoning references; streaming message IDs are explicitly generated to prevent reply overwrites.
+- Fault media stays in account/thread-scoped private storage; photos use the existing chat model, whole-video observations use a video-capable gateway call, and voice transcripts are cached before human review.
+- Completed repair logs are explicitly reviewed operator reports scoped by machine RLS; diagnosis prompts distinguish missing repair history from downtime and require safe escalation rather than invented repair procedures.

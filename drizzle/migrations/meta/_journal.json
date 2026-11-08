@@ -29,6 +29,13 @@
       "when": 1794138017241,
       "tag": "0003_protect_completed_chat_activity",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1794139314316,
+      "tag": "0004_machine_repair_knowledge_and_private_media",
+      "breakpoints": true
     }
   ]
 }

@@ -1,0 +1,15 @@
+CREATE TABLE public.repair_logs (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), machine_id uuid NOT NULL REFERENCES public.machines(id), author_id uuid NOT NULL DEFAULT auth.uid(), thread_id uuid REFERENCES public.chat_threads(id) ON DELETE SET NULL, title text NOT NULL CHECK (length(title) BETWEEN 2 AND 160), fault text NOT NULL CHECK (length(fault) BETWEEN 2 AND 5000), resolution text NOT NULL CHECK (length(resolution) BETWEEN 2 AND 10000), created_at timestamptz NOT NULL DEFAULT now());
+GRANT SELECT, INSERT ON public.repair_logs TO authenticated;
+GRANT ALL ON public.repair_logs TO service_role;
+ALTER TABLE public.repair_logs ENABLE ROW LEVEL SECURITY;
+CREATE POLICY repair_team_read ON public.repair_logs FOR SELECT TO authenticated USING (EXISTS (SELECT 1 FROM public.machines m WHERE m.id=machine_id AND public.can_read_machine(m.id,m.owner_id)));
+CREATE POLICY repair_team_insert ON public.repair_logs FOR INSERT TO authenticated WITH CHECK (author_id=auth.uid() AND EXISTS (SELECT 1 FROM public.machines m WHERE m.id=machine_id AND public.can_read_machine(m.id,m.owner_id)) AND (thread_id IS NULL OR EXISTS (SELECT 1 FROM public.chat_threads t WHERE t.id=thread_id AND t.user_id=auth.uid())));
+CREATE INDEX repair_logs_machine ON public.repair_logs(machine_id,created_at DESC);
+CREATE POLICY chat_media_upload ON storage.objects FOR INSERT TO authenticated WITH CHECK (bucket_id='chat-media' AND (storage.foldername(name))[1]=auth.uid()::text AND EXISTS (SELECT 1 FROM public.chat_threads t WHERE t.id::text=(storage.foldername(name))[2] AND t.user_id=auth.uid()));
+CREATE POLICY chat_media_read ON storage.objects FOR SELECT TO authenticated USING (bucket_id='chat-media' AND (storage.foldername(name))[1]=auth.uid()::text AND EXISTS (SELECT 1 FROM public.chat_threads t WHERE t.id::text=(storage.foldername(name))[2] AND t.user_id=auth.uid()));
+CREATE POLICY chat_media_delete ON storage.objects FOR DELETE TO authenticated USING (bucket_id='chat-media' AND (storage.foldername(name))[1]=auth.uid()::text);
+CREATE TABLE public.voice_transcripts (path text PRIMARY KEY, user_id uuid NOT NULL DEFAULT auth.uid(), transcript text NOT NULL, created_at timestamptz NOT NULL DEFAULT now());
+GRANT SELECT, INSERT ON public.voice_transcripts TO authenticated; GRANT ALL ON public.voice_transcripts TO service_role;
+ALTER TABLE public.voice_transcripts ENABLE ROW LEVEL SECURITY;
+CREATE POLICY transcript_read ON public.voice_transcripts FOR SELECT TO authenticated USING (user_id=auth.uid());
+CREATE POLICY transcript_insert ON public.voice_transcripts FOR INSERT TO authenticated WITH CHECK (user_id=auth.uid() AND split_part(path,'/',1)=auth.uid()::text);

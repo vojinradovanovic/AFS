@@ -318,6 +318,54 @@ export type Database = {
           },
         ]
       }
+      repair_logs: {
+        Row: {
+          author_id: string
+          created_at: string
+          fault: string
+          id: string
+          machine_id: string
+          resolution: string
+          thread_id: string | null
+          title: string
+        }
+        Insert: {
+          author_id?: string
+          created_at?: string
+          fault: string
+          id?: string
+          machine_id: string
+          resolution: string
+          thread_id?: string | null
+          title: string
+        }
+        Update: {
+          author_id?: string
+          created_at?: string
+          fault?: string
+          id?: string
+          machine_id?: string
+          resolution?: string
+          thread_id?: string | null
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "repair_logs_machine_id_fkey"
+            columns: ["machine_id"]
+            isOneToOne: false
+            referencedRelation: "machines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "repair_logs_thread_id_fkey"
+            columns: ["thread_id"]
+            isOneToOne: false
+            referencedRelation: "chat_threads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       savings_activity: {
         Row: {
           actor_id: string
@@ -392,6 +440,27 @@ export type Database = {
         Update: {
           plant_owner_id?: string
           role?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      voice_transcripts: {
+        Row: {
+          created_at: string
+          path: string
+          transcript: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          path: string
+          transcript: string
+          user_id?: string
+        }
+        Update: {
+          created_at?: string
+          path?: string
+          transcript?: string
           user_id?: string
         }
         Relationships: []
