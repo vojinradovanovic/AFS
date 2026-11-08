@@ -10,3 +10,4 @@
 - [x] Save reviewed repairs for the assigned machine team and verify access.
 - [x] Add interactive saved-paperwork previews and verify workbook browsing.
 - [x] Use existing Excel column titles in the preview header.
+- [x] Add a chat provider selector and verify provider replies and follow-ups.

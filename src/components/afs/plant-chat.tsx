@@ -12,6 +12,14 @@ import { ChatMedia, MediaPreview, type ChatAttachment } from "./chat-media";
 import { threadsQuery } from "@/lib/chat/queries";
 import { Button } from "@/components/ui/button";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { CHAT_PROVIDERS, chatProviderSchema, type ChatProvider } from "@/lib/chat/providers";
+import {
   Conversation,
   ConversationContent,
   ConversationScrollButton,
@@ -164,6 +172,13 @@ function ChatWindow({
   initialMessages: UIMessage[];
 }) {
   const [input, setInput] = useState("");
+  const [provider, setProvider] = useState<ChatProvider>("openai");
+  useEffect(() => {
+    const saved = chatProviderSchema.safeParse(
+      localStorage.getItem(`afs-chat-provider:${threadId}`),
+    );
+    if (saved.success) setProvider(saved.data);
+  }, [threadId]);
   const { data: machines } = useSuspenseQuery(machinesQuery);
   const [machineId, setMachineId] = useState(machines.length === 1 ? (machines[0]?.id ?? "") : "");
   const [attachments, setAttachments] = useState<ChatAttachment[]>([]);
@@ -174,13 +189,13 @@ function ChatWindow({
     () =>
       new DefaultChatTransport({
         api: "/api/chat",
-        body: { threadId, machineId: machineId || undefined },
+        body: { threadId, machineId: machineId || undefined, provider },
         headers: async () => {
           const { data } = await supabase.auth.getSession();
           return data.session ? { Authorization: `Bearer ${data.session.access_token}` } : {};
         },
       }),
-    [threadId, machineId],
+    [threadId, machineId, provider],
   );
   const { messages, sendMessage, status, error, stop } = useChat({
     id: threadId,
@@ -278,6 +293,34 @@ function ChatWindow({
         <ConversationScrollButton />
       </Conversation>
       <div className="mx-auto w-full max-w-4xl px-6 pb-6">
+        <div className="mb-3 flex flex-wrap items-center gap-3">
+          <span className="text-sm font-medium" id="chat-provider-label">
+            AI provider
+          </span>
+          <Select
+            value={provider}
+            disabled={busy}
+            onValueChange={(value) => {
+              const next = chatProviderSchema.parse(value);
+              setProvider(next);
+              localStorage.setItem(`afs-chat-provider:${threadId}`, next);
+            }}
+          >
+            <SelectTrigger
+              aria-labelledby="chat-provider-label"
+              className="w-full bg-panel sm:w-72"
+            >
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {Object.entries(CHAT_PROVIDERS).map(([value, option]) => (
+                <SelectItem key={value} value={value}>
+                  {option.name} · {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
         <select
           aria-label="Fault machine"
           value={machineId}

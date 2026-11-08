@@ -4,7 +4,8 @@ import { z } from "zod";
 import type { Database, Json } from "@/integrations/supabase/types";
 import { spreadsheetContext, type SpreadsheetData } from "@/lib/spreadsheets";
 import { failureRisk } from "@/lib/rules";
-import { createResponsesCall } from "./responses.ts";
+import { createProviderCall } from "./providers.server";
+import { chatProviderSchema } from "./providers";
 import { withLovableAiGatewayRunIdHeader } from "./run-id.ts";
 import { ownedMediaPath, validateMedia } from "./media-rules";
 import { analyzeVideo, MediaAiError } from "./media.server";
@@ -39,6 +40,7 @@ export async function handlePlantChat(request: Request) {
         threadId: z.string().uuid(),
         messages: z.array(z.unknown()).min(1),
         machineId: z.string().uuid().optional(),
+        provider: chatProviderSchema.default("openai"),
       })
       .parse(await request.json());
     const { data: thread, error: threadError } = await client
@@ -196,12 +198,12 @@ export async function handlePlantChat(request: Request) {
       }
     }
     latestInput.content = mediaContent;
-    const { result, gateway } = createResponsesCall(
+    const { result, gateway } = createProviderCall(
       request,
       {
         baseURL: "https://ai.gateway.lovable.dev/v1",
         apiKey,
-        model: "openai/gpt-6-astra",
+        provider: body.provider,
         onResponse: async (response) => {
           if (response.status !== 403) return;
           const body = (await response.json().catch(() => ({}))) as {

@@ -42,3 +42,4 @@ use the editor.
 - Chat reload retains reasoning UI parts, but model replay uses complete plain-text history to avoid deployment-bound encrypted reasoning references; streaming message IDs are explicitly generated to prevent reply overwrites.
 - Fault media stays in account/thread-scoped private storage; photos use the existing chat model, whole-video observations use a video-capable gateway call, and voice transcripts are cached before human review.
 - Completed repair logs are explicitly reviewed operator reports scoped by machine RLS; diagnosis prompts distinguish missing repair history from downtime and require safe escalation rather than invented repair procedures.
+- Chat provider choices are allowlisted in one shared module and routed through server-only native gateway adapters; preserve OpenAI defaults and independent video/transcription calls so vendor selection changes only chat answers.

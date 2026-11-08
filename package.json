@@ -17,7 +17,9 @@
     "rolldown": "1.2.1"
   },
   "dependencies": {
+    "@ai-sdk/anthropic": "^4.0.97",
     "@ai-sdk/openai": "^4.0.109",
+    "@ai-sdk/openai-compatible": "^3.0.85",
     "@ai-sdk/react": "^4.0.167",
     "@hookform/resolvers": "^5.2.2",
     "@lovable.dev/cloud-auth-js": "^1.1.2",
