@@ -1,10 +1,12 @@
 # Savor Signal Intelligence
 
-I am trying to build a platform called AFS. It should be similar to what Harmony.ai has. This is the website I am using as a reference:
+I am trying to build a platform called AFS. It should provide AI solutions to factory production companies.
 
-https://www.tryharmony.ai/industries/consumer-food/consumer-packaged-goods
-
-The desktop app should, for a first run, have features U1, U2, U4 and U12
+For a first run, its features should be:
+* Paperwork Digitization
+* Live Machine Data
+* AI Search Across All Data
+* Predictive Maintenance
 
 This project was built with [Lovable](https://lovable.dev).
 
