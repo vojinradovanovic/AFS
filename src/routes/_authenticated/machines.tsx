@@ -5,7 +5,7 @@ import { Line, LineChart, ResponsiveContainer, YAxis } from "recharts";
 import { Plus, Radio } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { machinesQuery, type Machine } from "@/lib/queries";
+import { accessQuery, machinesQuery, type Machine } from "@/lib/queries";
 import { history, readingAt } from "@/lib/telemetry";
 import { PageHeader, Stat, StatusDot, headMeta } from "@/components/afs/page";
 import { Button } from "@/components/ui/button";
@@ -30,6 +30,7 @@ const BRANDS = ["Allen-Bradley", "Siemens", "Omron", "Mitsubishi", "Mettler Tole
 const PROTOCOLS = ["OPC UA", "EtherNet/IP", "Modbus TCP", "PROFINET", "CC-Link", "MQTT"];
 
 function Machines() {
+  const { data: access } = useSuspenseQuery(accessQuery);
   const { data: machines } = useSuspenseQuery(machinesQuery);
   const now = useNow();
   const lines = [...new Set(machines.map((m) => m.line))];
@@ -43,10 +44,9 @@ function Machines() {
   return (
     <div>
       <PageHeader
-        code="U2 · Live machine data"
         title="Live machine data"
         desc="Every PLC and sensor on one screen, grouped by line."
-        actions={<Button onClick={() => setOpen(true)}><Plus className="size-4" /> Connect machine</Button>}
+        actions={access.role === "production_manager" && <Button onClick={() => setOpen(true)}><Plus className="size-4" /> Connect machine</Button>}
       />
       <div className="flex items-center gap-2 px-8 pt-6">
         <span className="tag flex items-center gap-1.5 rounded-md border border-border px-2 py-1"><Radio className="live-dot size-3 text-primary" /> Simulated feed · 2 s</span>
@@ -75,7 +75,7 @@ function MachineCard({ m, now, r }: { m: Machine; now: number; r: ReturnType<typ
   const data = history(m.id, Number(m.nominal_speed), m.status, now);
   const setStatus = useMutation({
     mutationFn: async (status: string) => {
-      const { error } = await supabase.from("machines").update({ status }).eq("id", m.id);
+      const { error } = await supabase.rpc("set_machine_status", { p_machine: m.id, p_status: status });
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["machines"] }),
@@ -126,7 +126,7 @@ function Metric({ label, value, unit, warn }: { label: string; value: string; un
 
 function ConnectDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (o: boolean) => void }) {
   const qc = useQueryClient();
-  const [f, setF] = useState({ name: "", line: "Line 1", brand: BRANDS[0]!, protocol: PROTOCOLS[0]!, nominal_speed: "100", criticality: "3", pm_interval_hours: "500" });
+  const [f, setF] = useState({ name: "", line: "Line 1", brand: "Allen-Bradley", protocol: "OPC UA", nominal_speed: "100", criticality: "3", pm_interval_hours: "500" });
   const save = useMutation({
     mutationFn: async () => {
       const { error } = await supabase.from("machines").insert({

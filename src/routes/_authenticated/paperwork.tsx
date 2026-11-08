@@ -1,11 +1,11 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
-import { AlertTriangle, Camera, CheckCircle2, Plus, Loader2 } from "lucide-react";
+import { AlertTriangle, Camera, CheckCircle2, Plus, Loader2, FileSpreadsheet } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { recordsQuery, type PaperRecord } from "@/lib/queries";
+import { accessQuery, machinesQuery, recordsQuery, type PaperRecord } from "@/lib/queries";
 import { flagBatchSheet, flagChangeover, flagWeightCheck } from "@/lib/rules";
 import { extractPaper, type Extracted } from "@/lib/ai.functions";
 import { PageHeader, Stat, headMeta } from "@/components/afs/page";
@@ -13,11 +13,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { readSpreadsheet, type SpreadsheetData } from "@/lib/spreadsheets";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/paperwork")({
   head: () => headMeta("Paperwork", "Digitize batch sheets, weight checks, changeovers and downtime logs with instant out-of-range flags."),
-  loader: ({ context }) => context.queryClient.ensureQueryData(recordsQuery),
+  loader: ({ context }) => Promise.all([context.queryClient.ensureQueryData(recordsQuery), context.queryClient.ensureQueryData(machinesQuery)]),
   component: Paperwork,
 });
 
@@ -75,8 +76,16 @@ function fromExtracted(x: Extracted): Form {
 }
 
 function Paperwork() {
+  const { data: access } = useSuspenseQuery(accessQuery);
+  const { data: machines } = useSuspenseQuery(machinesQuery);
+  const [machineId, setMachineId] = useState("");
+  const machine = machines.find((m) => m.id === machineId);
+  const [workbook, setWorkbook] = useState<SpreadsheetData | null>(null);
+  const [importing, setImporting] = useState(false);
+  const [sheet, setSheet] = useState(0);
+  const excelRef = useRef<HTMLInputElement>(null);
   const { data: records } = useSuspenseQuery(recordsQuery);
-  const [filter, setFilter] = useState<RType | "all" | "flagged">("all");
+  const [filter, setFilter] = useState<RType | "all" | "flagged" | "spreadsheet">("all");
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState<Form>(empty());
   const [scanning, setScanning] = useState(false);
@@ -90,9 +99,11 @@ function Paperwork() {
 
   const save = useMutation({
     mutationFn: async () => {
+      if (access.role === "machine_operator" && !machine) throw new Error("Select an assigned machine first.");
       const { data, flags } = build(form);
       const { error } = await supabase.from("paper_records").insert({
-        record_type: form.type, title: form.title || TYPES.find((t) => t.id === form.type)!.label, line: form.line,
+        owner_id: access.plant_owner_id, machine_id: machine?.id ?? null,
+        record_type: form.type, title: form.title || TYPES.find((t) => t.id === form.type)?.label || "Entry", line: machine?.line ?? form.line,
         recorded_by: form.recorded_by || null, data, flags, flagged: flags.length > 0, source,
       });
       if (error) throw error;
@@ -119,16 +130,44 @@ function Paperwork() {
     toast.success("Form read — review before saving");
   }
 
+  async function importFile(file: File) {
+    setImporting(true);
+    try { setWorkbook(await readSpreadsheet(file)); setSheet(0); }
+    catch (e) { toast.error(e instanceof Error ? e.message : "Could not read workbook"); }
+    finally { setImporting(false); }
+  }
+  async function saveWorkbook() {
+    if (!workbook) return;
+    if (access.role === "machine_operator" && !machine) { toast.error("Select an assigned machine first."); return; }
+    setImporting(true);
+    try {
+      const { error } = await supabase.from("paper_records").insert({
+        owner_id: access.plant_owner_id, machine_id: machine?.id ?? null,
+        line: machine?.line ?? "Plant", record_type: "spreadsheet", source: "excel",
+        title: workbook.filename, data: JSON.parse(JSON.stringify(workbook)),
+      });
+      if (error) throw error;
+      await qc.invalidateQueries({ queryKey: ["records"] });
+      setWorkbook(null); toast.success("Excel paperwork saved");
+    } catch (e) { toast.error(e instanceof Error ? e.message : "Import failed"); }
+    finally { setImporting(false); }
+  }
+  const machineSelector = <select aria-label="Paperwork machine" value={machineId} onChange={(e) => setMachineId(e.target.value)} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
+    <option value="">{access.role === "production_manager" ? "Plant-wide paperwork" : "Select assigned machine"}</option>
+    {machines.map((m) => <option key={m.id} value={m.id}>{m.name} · {m.line}</option>)}
+  </select>;
+
   const set = <K extends keyof Form>(k: K, v: Form[K]) => setForm((f) => ({ ...f, [k]: v }));
 
   return (
     <div>
       <PageHeader
-        code="U1 · Pen, paper & Excel"
         title="Paperwork digitization"
         desc="Capture once at the station. Entries are checked against spec the moment they are written."
         actions={
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
+            <input ref={excelRef} aria-label="Excel workbook" type="file" accept=".xlsx" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) importFile(f); e.target.value = ""; }} />
+            <Button variant="outline" disabled={importing} onClick={() => excelRef.current?.click()}><FileSpreadsheet />{importing ? "Reading…" : "Upload Excel"}</Button>
             <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files?.[0] && onFile(e.target.files[0])} />
             <Button variant="outline" onClick={() => fileRef.current?.click()} disabled={scanning}>
               {scanning ? <Loader2 className="size-4 animate-spin" /> : <Camera className="size-4" />} Scan paper form
@@ -144,9 +183,9 @@ function Paperwork() {
         <Stat label="Today" value={records.filter((r) => new Date(r.recorded_at).toDateString() === new Date().toDateString()).length} />
       </div>
       <div className="flex gap-1 px-8">
-        {(["all", "flagged", ...TYPES.map((t) => t.id)] as const).map((f) => (
+        {(["all", "flagged", "spreadsheet", ...TYPES.map((t) => t.id)] as const).map((f) => (
           <button key={f} onClick={() => setFilter(f)} className={cn("rounded-md px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground", filter === f && "bg-secondary text-foreground")}>
-            {f === "all" ? "All" : f === "flagged" ? "Flagged" : TYPES.find((t) => t.id === f)!.label}
+            {f === "all" ? "All" : f === "flagged" ? "Flagged" : f === "spreadsheet" ? "Excel" : TYPES.find((t) => t.id === f)?.label}
           </button>
         ))}
       </div>
@@ -157,9 +196,19 @@ function Paperwork() {
         </div>
       </div>
 
+      <Dialog open={!!workbook} onOpenChange={(o) => !o && setWorkbook(null)}>
+        <DialogContent className="max-w-4xl">
+          <DialogHeader><DialogTitle>{workbook?.filename}</DialogTitle></DialogHeader>
+          {machineSelector}
+          <select aria-label="Workbook sheet" className="rounded-md border border-input bg-background p-2 text-sm" value={sheet} onChange={(e) => setSheet(Number(e.target.value))}>{workbook?.sheets.map((s, i) => <option key={s.name} value={i}>{s.name} · {s.rows.length} rows</option>)}</select>
+          <div className="max-h-80 overflow-auto"><table className="w-full text-left text-xs"><tbody>{workbook?.sheets[sheet]?.rows.slice(0, 20).map((r, i) => <tr key={i} className="border-b border-border"><th className="bg-secondary p-2">{i + 1}</th>{r.map((c, j) => <td key={j} className="max-w-64 truncate border-r border-border p-2" title={c}>{c}</td>)}</tr>)}</tbody></table></div>
+          <div className="flex justify-end gap-2"><Button variant="ghost" onClick={() => setWorkbook(null)}>Cancel</Button><Button disabled={importing} onClick={saveWorkbook}>Save workbook</Button></div>
+        </DialogContent>
+      </Dialog>
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-w-2xl">
           <DialogHeader><DialogTitle>{source === "scan" ? "Review scanned form" : "New entry"}</DialogTitle></DialogHeader>
+          {machineSelector}
           <div className="flex gap-1">
             {TYPES.map((t) => (
               <button key={t.id} onClick={() => set("type", t.id)} className={cn("rounded-md border border-border px-3 py-1.5 text-xs", form.type === t.id ? "border-primary text-primary" : "text-muted-foreground")}>{t.label}</button>
@@ -233,10 +282,11 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 }
 
 function RecordRow({ r }: { r: PaperRecord }) {
-  const d = r.data as { product?: string; target?: number; tolerance?: number; samples?: number[]; batch?: string; mix_temp_c?: number; from?: string; to?: string; minutes?: number; machine?: string; reason?: string };
+  const d = r.data as { sheets?: { name: string; rows: string[][] }[]; product?: string; target?: number; tolerance?: number; samples?: number[]; batch?: string; mix_temp_c?: number; from?: string; to?: string; minutes?: number; machine?: string; reason?: string };
   const flags = r.flags as string[];
   const summary =
-    r.record_type === "weight_check" ? `${d.product ?? ""} · target ${d.target} ± ${d.tolerance} g · ${d.samples?.join(", ")}`
+    r.record_type === "spreadsheet" ? `${d.sheets?.map((s) => `${s.name}: ${s.rows.length} rows`).join(" · ")}`
+    : r.record_type === "weight_check" ? `${d.product ?? ""} · target ${d.target} ± ${d.tolerance} g · ${d.samples?.join(", ")}`
     : r.record_type === "batch_sheet" ? `${d.batch ?? ""} · ${d.product ?? ""} · mix ${d.mix_temp_c} °C`
     : r.record_type === "changeover" ? `${d.from ?? ""} → ${d.to ?? ""}${d.minutes ? ` · ${d.minutes} min` : ""}`
     : `${d.machine ?? ""} · ${d.reason ?? ""}${d.minutes ? ` · ${d.minutes} min` : ""}`;
@@ -246,13 +296,14 @@ function RecordRow({ r }: { r: PaperRecord }) {
         <div className="flex items-center gap-2 text-sm">
           {r.flagged ? <AlertTriangle className="size-4 text-warning" /> : <CheckCircle2 className="size-4 text-success" />}
           <span className="font-medium">{r.title}</span>
-          <span className="tag">{TYPES.find((t) => t.id === r.record_type)?.label}</span>
+          <span className="tag">{r.record_type === "spreadsheet" ? "Excel" : TYPES.find((t) => t.id === r.record_type)?.label}</span>
           {r.source === "scan" && <span className="tag text-primary">scanned</span>}
         </div>
         <div className="num mt-1 text-xs text-muted-foreground">{summary}</div>
         {flags.length > 0 && <div className="mt-1 text-xs text-warning">{flags.join(" · ")}</div>}
       </div>
       <div className="text-right text-xs text-muted-foreground">
+        {r.record_type === "spreadsheet" && <Button asChild size="sm" variant="outline" className="mb-2"><Link to="/search" search={{ record: r.id }}>Ask about file</Link></Button>}
         <div>{r.line}</div>
         <div className="num">{new Date(r.recorded_at).toLocaleString()}</div>
         <div>{r.recorded_by}</div>

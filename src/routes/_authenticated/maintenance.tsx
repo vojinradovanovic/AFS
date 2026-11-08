@@ -67,7 +67,7 @@ function Maintenance() {
 
   return (
     <div>
-      <PageHeader code="U12 · Resource intelligence" title="Predictive maintenance" desc="Failure risk from PM hours, criticality, status and failure history. Protected PM windows can't be bulldozed for one more run." />
+      <PageHeader title="Predictive maintenance" desc="Failure risk from PM hours, criticality, status and failure history. Protected PM windows can't be bulldozed for one more run." />
       <div className="grid grid-cols-4 gap-4 px-8 py-6">
         <Stat label="High risk" value={rows.filter((r) => riskLevel(r.risk) === "high").length} tone="bad" />
         <Stat label="Watch" value={rows.filter((r) => riskLevel(r.risk) === "watch").length} tone="warn" />

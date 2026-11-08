@@ -11,11 +11,13 @@ import { headMeta } from "@/components/afs/page";
 
 export const Route = createFileRoute("/auth")({
   head: () => headMeta("Sign in", "Sign in to AFS, the AI layer for your plant floor."),
+  validateSearch: (s: Record<string, unknown>) => ({ invite: typeof s["invite"] === "string" ? s["invite"] : undefined }),
   component: AuthPage,
 });
 
 function AuthPage() {
   const navigate = useNavigate();
+  const { invite } = Route.useSearch();
   const [mode, setMode] = useState<"in" | "up">("in");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -23,10 +25,16 @@ function AuthPage() {
   const [sent, setSent] = useState(false);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => data.session && navigate({ to: "/overview" }));
-    const { data } = supabase.auth.onAuthStateChange((_e, s) => s && navigate({ to: "/overview" }));
+    const destination = () => {
+      const token = invite || sessionStorage.getItem("afs-invite");
+      if (token) { sessionStorage.removeItem("afs-invite"); navigate({ to: "/invite", search: { token } }); }
+      else navigate({ to: "/overview" });
+    };
+    if (invite) sessionStorage.setItem("afs-invite", invite);
+    supabase.auth.getSession().then(({ data }) => data.session && destination());
+    const { data } = supabase.auth.onAuthStateChange((_e, s) => s && destination());
     return () => data.subscription.unsubscribe();
-  }, [navigate]);
+  }, [navigate, invite]);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -34,7 +42,7 @@ function AuthPage() {
     const res =
       mode === "in"
         ? await supabase.auth.signInWithPassword({ email, password })
-        : await supabase.auth.signUp({ email, password, options: { emailRedirectTo: window.location.origin } });
+        : await supabase.auth.signUp({ email, password, options: { emailRedirectTo: invite ? `${window.location.origin}/invite?token=${encodeURIComponent(invite)}` : window.location.origin } });
     setBusy(false);
     if (res.error) { toast.error(res.error.message); return; }
     if (mode === "up" && !res.data.session) setSent(true);
@@ -58,10 +66,10 @@ function AuthPage() {
             Your plant floor, <span className="text-primary">one screen.</span>
           </h1>
           <ul className="mt-8 space-y-2 text-sm text-muted-foreground">
-            <li><span className="num text-primary">U1</span> &nbsp;Paperwork digitization</li>
-            <li><span className="num text-primary">U2</span> &nbsp;Live machine data</li>
-            <li><span className="num text-primary">U4</span> &nbsp;AI search across all data</li>
-            <li><span className="num text-primary">U12</span> Predictive maintenance</li>
+            <li>Paperwork digitization</li>
+            <li>Live machine data</li>
+            <li>AI search across all data</li>
+            <li>Predictive maintenance</li>
           </ul>
         </div>
         <p className="tag">Every agent proposes. A person approves.</p>

@@ -12,11 +12,13 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthRouteImport } from './routes/auth'
+import { Route as InviteRouteImport } from './routes/invite'
 import { Route as AuthenticatedMachinesRouteImport } from './routes/_authenticated/machines'
 import { Route as AuthenticatedMaintenanceRouteImport } from './routes/_authenticated/maintenance'
 import { Route as AuthenticatedOverviewRouteImport } from './routes/_authenticated/overview'
 import { Route as AuthenticatedPaperworkRouteImport } from './routes/_authenticated/paperwork'
 import { Route as AuthenticatedSearchRouteImport } from './routes/_authenticated/search'
+import { Route as AuthenticatedTeamRouteImport } from './routes/_authenticated/team'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -30,6 +32,11 @@ const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
   path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const InviteRoute = InviteRouteImport.update({
+  id: '/invite',
+  path: '/invite',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedMachinesRoute = AuthenticatedMachinesRouteImport.update({
@@ -58,71 +65,89 @@ const AuthenticatedSearchRoute = AuthenticatedSearchRouteImport.update({
   path: '/search',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedTeamRoute = AuthenticatedTeamRouteImport.update({
+  id: '/team',
+  path: '/team',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/invite': typeof InviteRoute
   '/machines': typeof AuthenticatedMachinesRoute
   '/maintenance': typeof AuthenticatedMaintenanceRoute
   '/overview': typeof AuthenticatedOverviewRoute
   '/paperwork': typeof AuthenticatedPaperworkRoute
   '/search': typeof AuthenticatedSearchRoute
+  '/team': typeof AuthenticatedTeamRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/invite': typeof InviteRoute
   '/machines': typeof AuthenticatedMachinesRoute
   '/maintenance': typeof AuthenticatedMaintenanceRoute
   '/overview': typeof AuthenticatedOverviewRoute
   '/paperwork': typeof AuthenticatedPaperworkRoute
   '/search': typeof AuthenticatedSearchRoute
+  '/team': typeof AuthenticatedTeamRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
+  '/invite': typeof InviteRoute
   '/_authenticated/machines': typeof AuthenticatedMachinesRoute
   '/_authenticated/maintenance': typeof AuthenticatedMaintenanceRoute
   '/_authenticated/overview': typeof AuthenticatedOverviewRoute
   '/_authenticated/paperwork': typeof AuthenticatedPaperworkRoute
   '/_authenticated/search': typeof AuthenticatedSearchRoute
+  '/_authenticated/team': typeof AuthenticatedTeamRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
     | '/auth'
+    | '/invite'
     | '/machines'
     | '/maintenance'
     | '/overview'
     | '/paperwork'
     | '/search'
+    | '/team'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/auth'
+    | '/invite'
     | '/machines'
     | '/maintenance'
     | '/overview'
     | '/paperwork'
     | '/search'
+    | '/team'
   id:
     | '__root__'
     | '/'
     | '/_authenticated'
     | '/auth'
+    | '/invite'
     | '/_authenticated/machines'
     | '/_authenticated/maintenance'
     | '/_authenticated/overview'
     | '/_authenticated/paperwork'
     | '/_authenticated/search'
+    | '/_authenticated/team'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
+  InviteRoute: typeof InviteRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -146,6 +171,13 @@ declare module '@tanstack/react-router' {
       path: '/auth'
       fullPath: '/auth'
       preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/invite': {
+      id: '/invite'
+      path: '/invite'
+      fullPath: '/invite'
+      preLoaderRoute: typeof InviteRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/machines': {
@@ -183,6 +215,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSearchRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/team': {
+      id: '/_authenticated/team'
+      path: '/team'
+      fullPath: '/team'
+      preLoaderRoute: typeof AuthenticatedTeamRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
   }
 }
 
@@ -192,6 +231,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedOverviewRoute: typeof AuthenticatedOverviewRoute
   AuthenticatedPaperworkRoute: typeof AuthenticatedPaperworkRoute
   AuthenticatedSearchRoute: typeof AuthenticatedSearchRoute
+  AuthenticatedTeamRoute: typeof AuthenticatedTeamRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
@@ -200,6 +240,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedOverviewRoute: AuthenticatedOverviewRoute,
   AuthenticatedPaperworkRoute: AuthenticatedPaperworkRoute,
   AuthenticatedSearchRoute: AuthenticatedSearchRoute,
+  AuthenticatedTeamRoute: AuthenticatedTeamRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
@@ -209,6 +250,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
+  InviteRoute: InviteRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

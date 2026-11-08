@@ -14,6 +14,29 @@ export type Database = {
   }
   public: {
     Tables: {
+      machine_assignments: {
+        Row: {
+          machine_id: string
+          user_id: string
+        }
+        Insert: {
+          machine_id: string
+          user_id: string
+        }
+        Update: {
+          machine_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "machine_assignments_machine_id_fkey"
+            columns: ["machine_id"]
+            isOneToOne: false
+            referencedRelation: "machines"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       machines: {
         Row: {
           brand: string
@@ -112,6 +135,39 @@ export type Database = {
           },
         ]
       }
+      operator_invites: {
+        Row: {
+          accepted_by: string | null
+          created_at: string
+          email: string
+          expires_at: string
+          id: string
+          machine_ids: string[]
+          owner_id: string
+          token: string
+        }
+        Insert: {
+          accepted_by?: string | null
+          created_at?: string
+          email: string
+          expires_at?: string
+          id?: string
+          machine_ids: string[]
+          owner_id?: string
+          token?: string
+        }
+        Update: {
+          accepted_by?: string | null
+          created_at?: string
+          email?: string
+          expires_at?: string
+          id?: string
+          machine_ids?: string[]
+          owner_id?: string
+          token?: string
+        }
+        Relationships: []
+      }
       paper_records: {
         Row: {
           data: Json
@@ -119,6 +175,7 @@ export type Database = {
           flags: Json
           id: string
           line: string
+          machine_id: string | null
           owner_id: string
           record_type: string
           recorded_at: string
@@ -132,6 +189,7 @@ export type Database = {
           flags?: Json
           id?: string
           line?: string
+          machine_id?: string | null
           owner_id?: string
           record_type: string
           recorded_at?: string
@@ -145,12 +203,39 @@ export type Database = {
           flags?: Json
           id?: string
           line?: string
+          machine_id?: string | null
           owner_id?: string
           record_type?: string
           recorded_at?: string
           recorded_by?: string | null
           source?: string
           title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "paper_records_machine_id_fkey"
+            columns: ["machine_id"]
+            isOneToOne: false
+            referencedRelation: "machines"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_roles: {
+        Row: {
+          plant_owner_id: string
+          role: string
+          user_id: string
+        }
+        Insert: {
+          plant_owner_id: string
+          role: string
+          user_id: string
+        }
+        Update: {
+          plant_owner_id?: string
+          role?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -159,7 +244,20 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      accept_operator_invite: { Args: { p_token: string }; Returns: undefined }
+      can_read_machine: {
+        Args: { p_id: string; p_owner: string }
+        Returns: boolean
+      }
+      create_operator_invite: {
+        Args: { p_email: string; p_machines: string[] }
+        Returns: string
+      }
+      is_plant_manager: { Args: { p_owner: string }; Returns: boolean }
+      set_machine_status: {
+        Args: { p_machine: string; p_status: string }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never

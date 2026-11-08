@@ -6,6 +6,15 @@ export type Machine = Tables<"machines">;
 export type PaperRecord = Tables<"paper_records">;
 export type MaintEvent = Tables<"maintenance_events">;
 
+export const accessQuery = queryOptions({
+  queryKey: ["plant-access"],
+  queryFn: async () => {
+    const { data, error } = await supabase.from("user_roles").select("*").single();
+    if (error) throw new Error(error.message);
+    return data;
+  },
+});
+
 async function must<T>(p: PromiseLike<{ data: T | null; error: { message: string } | null }>): Promise<T> {
   const { data, error } = await p;
   if (error) throw new Error(error.message);

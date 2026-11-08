@@ -8,6 +8,13 @@
       "when": 1794131161937,
       "tag": "0000_migration",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1794135288407,
+      "tag": "0001_shared_plant_roles_and_invitations",
+      "breakpoints": true
     }
   ]
 }

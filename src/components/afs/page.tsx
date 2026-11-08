@@ -1,12 +1,11 @@
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
-export function PageHeader({ code, title, desc, actions }: { code: string; title: string; desc: string; actions?: ReactNode }) {
+export function PageHeader({ title, desc, actions }: { title: string; desc: string; actions?: ReactNode }) {
   return (
-    <header className="flex items-end justify-between gap-6 border-b border-border px-8 pb-6 pt-8">
+    <header className="flex flex-wrap items-end justify-between gap-6 border-b border-border px-8 pb-6 pt-8">
       <div>
-        <div className="tag">{code}</div>
-        <h1 className="mt-2 text-3xl font-semibold">{title}</h1>
+          <h1 className="mt-2 text-3xl font-semibold">{title}</h1>
         <p className="mt-1 max-w-2xl text-sm text-muted-foreground">{desc}</p>
       </div>
       {actions}

@@ -30,7 +30,9 @@ use the editor.
 <!-- LOVABLE:END -->
 
 ## AFS architecture
-- All plant data (machines, paper_records, maintenance_events) is owner-scoped by `owner_id = auth.uid()` RLS; new users get a sample plant via the `seed_sample_plant` trigger on signup, so the app is never empty.
+- Plant data uses owner IDs for shared plants; protected user_roles and machine_assignments determine manager and assigned-operator access through RLS. Signup creates a standalone manager plant; accepting an email-bound invitation switches the account to an operator without exposing its former plant.
 - Pure plant rules (out-of-range flags, failure risk) live in `src/lib/rules.ts` with tests; UI and AI code must call these rather than re-implementing thresholds.
 - Live machine readings come from `src/lib/telemetry.ts` (simulated) until real PLC connectors exist; replace that module's source, not the pages.
 - AI calls (search, paper-form scanning) are authenticated server functions in `src/lib/ai.functions.ts`; gateway setup stays in `src/lib/ai.server.ts`.
+- Excel workbooks are parsed in the browser and saved as spreadsheet paper_records with sheets and row numbers; AI search selects a workbook explicitly to avoid silently truncating spreadsheet context.
+- Operator invitations use email-bound, expiring tokens and database-authorized acceptance; invitation links are shared by managers, not automatically emailed.

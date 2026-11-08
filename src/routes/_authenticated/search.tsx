@@ -1,5 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
+import { useSuspenseQuery } from "@tanstack/react-query";
+import { recordsQuery } from "@/lib/queries";
 import { useState } from "react";
 import { Loader2, Search as SearchIcon, Sparkles } from "lucide-react";
 import { askPlant, type SearchResult } from "@/lib/ai.functions";
@@ -9,6 +11,8 @@ import { Input } from "@/components/ui/input";
 
 export const Route = createFileRoute("/_authenticated/search")({
   head: () => headMeta("AI search", "Ask anything about your plant and get answers in seconds, with sources shown."),
+  validateSearch: (search: Record<string, unknown>) => ({ record: typeof search["record"] === "string" ? search["record"] : undefined }),
+  loader: ({ context }) => context.queryClient.ensureQueryData(recordsQuery),
   component: SearchPage,
 });
 
@@ -21,6 +25,9 @@ const EXAMPLES = [
 const LINK = { machine: "/machines", record: "/paperwork", maintenance: "/maintenance" } as const;
 
 function SearchPage() {
+  const { data: records } = useSuspenseQuery(recordsQuery);
+  const search = Route.useSearch();
+  const [recordId, setRecordId] = useState(search.record ?? "");
   const ask = useServerFn(askPlant);
   const [q, setQ] = useState("");
   const [busy, setBusy] = useState(false);
@@ -30,7 +37,7 @@ function SearchPage() {
     if (question.trim().length < 2) return;
     setQ(question); setBusy(true); setRes(null);
     try {
-      const r = await ask({ data: { question } });
+      const r = await ask({ data: { question, recordId: recordId || undefined } });
       setRes({ ...r, q: question });
     } catch {
       setRes({ answer: "", sources: [], error: "Search failed. Please try again.", q: question });
@@ -39,8 +46,9 @@ function SearchPage() {
 
   return (
     <div>
-      <PageHeader code="U4 · AI search" title="Ask the plant" desc="Answers across paperwork, machine data and maintenance history — with the sources shown." />
+      <PageHeader title="Ask the plant" desc="Answers across paperwork, machine data and maintenance history — with the sources shown." />
       <div className="mx-auto max-w-3xl px-8 py-8">
+        <select aria-label="Search paperwork" value={recordId} onChange={(e) => setRecordId(e.target.value)} className="mb-4 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"><option value="">General plant data</option>{records.map((r) => <option key={r.id} value={r.id}>{r.title}{r.record_type === "spreadsheet" ? " · Excel" : ""}</option>)}</select>
         <form onSubmit={(e) => { e.preventDefault(); run(q); }} className="panel glow flex items-center gap-2 p-2">
           <SearchIcon className="ml-2 size-5 text-muted-foreground" />
           <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Why did line 3 rework spike last week?" className="border-0 bg-transparent text-base focus-visible:ring-0" />

@@ -1,8 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { eventsQuery, machinesQuery, recordsQuery } from "@/lib/queries";
+import { accessQuery, eventsQuery, machinesQuery, recordsQuery } from "@/lib/queries";
 import { failureRisk, riskLevel } from "@/lib/rules";
 import { PageHeader, Stat, StatusDot, headMeta } from "@/components/afs/page";
+import { homeTitle, type PlantRole } from "@/lib/access";
 import { ArrowRight } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/overview")({
@@ -13,6 +14,8 @@ export const Route = createFileRoute("/_authenticated/overview")({
 });
 
 function Overview() {
+  const { data: access } = useSuspenseQuery(accessQuery);
+  const operator = access.role === "machine_operator";
   const { data: machines } = useSuspenseQuery(machinesQuery);
   const { data: records } = useSuspenseQuery(recordsQuery);
   const { data: events } = useSuspenseQuery(eventsQuery);
@@ -25,7 +28,7 @@ function Overview() {
 
   return (
     <div>
-      <PageHeader code="00 · Overview" title="Plant floor" desc="Everything the AI layer is watching, on one screen." />
+      <PageHeader title={homeTitle(access.role as PlantRole)} desc={operator ? "Assigned machines and station paperwork." : "Plant status, paperwork and maintenance risk."} />
       <div className="grid grid-cols-4 gap-4 px-8 py-6">
         <Stat label="Machines running" value={`${machines.filter((m) => m.status === "running").length}/${machines.length}`} tone="good" />
         <Stat label="Machines down" value={machines.filter((m) => m.status === "down").length} tone="bad" />
@@ -46,7 +49,7 @@ function Overview() {
           </ul>
         </section>
         <section className="panel">
-          <div className="flex items-center justify-between border-b border-border px-4 py-3"><h2 className="text-sm font-semibold">Machines by risk</h2><Link to="/maintenance" className="tag flex items-center gap-1 hover:text-foreground">Open <ArrowRight className="size-3" /></Link></div>
+          <div className="flex items-center justify-between border-b border-border px-4 py-3"><h2 className="text-sm font-semibold">Machines by risk</h2><Link to={operator ? "/machines" : "/maintenance"} className="tag flex items-center gap-1 hover:text-foreground">Open <ArrowRight className="size-3" /></Link></div>
           <ul className="divide-y divide-border">
             {risks.sort((a, b) => b.risk - a.risk).map(({ m, risk }) => (
               <li key={m.id} className="flex items-center gap-3 px-4 py-3 text-sm">
