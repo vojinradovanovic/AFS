@@ -100,18 +100,18 @@ function MachineCard({ m, now, r }: { m: Machine; now: number; r: ReturnType<typ
           <option value="running">Running</option><option value="idle">Idle</option><option value="down">Down</option>
         </select>
       </div>
-      <div className="mt-4 text-xs font-medium">Machine speed</div>
-      <div className="mt-2 h-40" role="img" aria-label={`${m.name}: machine speed in units per minute over the last 78 seconds`}>
+      <div className="mt-4 text-base font-medium">Machine speed</div>
+      <div className="mt-2 h-48" role="img" aria-label={`${m.name}: machine speed in units per minute over the last 78 seconds`}>
         <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={data} margin={{ top: 8, right: 14, bottom: 20, left: 8 }}>
+          <LineChart data={data} margin={{ top: 8, right: 20, bottom: 28, left: 8 }}>
             <YAxis
               domain={[0, Math.ceil(Number(m.nominal_speed) * 1.1)]}
-              width={55}
-              tick={{ fill: "var(--color-muted-foreground)", fontSize: 10 }}
+              width={64}
+              tick={{ fill: "var(--color-muted-foreground)", fontSize: 13 }}
               stroke="var(--color-border)"
               allowDecimals={false}
               tickCount={3}
-              label={{ value: "Units/min", angle: -90, position: "insideLeft", fill: "var(--color-muted-foreground)", fontSize: 10 }}
+              label={{ value: "Units/min", angle: -90, position: "insideLeft", fill: "var(--color-muted-foreground)", fontSize: 14 }}
             />
             <XAxis
               dataKey="secondsAgo"
@@ -119,9 +119,9 @@ function MachineCard({ m, now, r }: { m: Machine; now: number; r: ReturnType<typ
               domain={[-78, 0]}
               ticks={[-78, -40, 0]}
               tickFormatter={(seconds) => seconds === 0 ? "Now" : `${Math.abs(seconds)} s`}
-              tick={{ fill: "var(--color-muted-foreground)", fontSize: 10 }}
+              tick={{ fill: "var(--color-muted-foreground)", fontSize: 13 }}
               stroke="var(--color-border)"
-              label={{ value: "Time (seconds ago)", position: "bottom", offset: 4, fill: "var(--color-muted-foreground)", fontSize: 10 }}
+              label={{ value: "Time (seconds ago)", position: "bottom", offset: 8, fill: "var(--color-muted-foreground)", fontSize: 14 }}
             />
             <Line type="monotone" dataKey="speed" stroke="var(--color-primary)" strokeWidth={1.5} dot={false} isAnimationActive={false} />
           </LineChart>
