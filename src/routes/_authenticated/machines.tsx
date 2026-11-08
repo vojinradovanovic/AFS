@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
-import { Line, LineChart, ResponsiveContainer, YAxis } from "recharts";
+import { Line, LineChart, ResponsiveContainer, XAxis, YAxis } from "recharts";
 import { Plus, Radio } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -62,7 +62,7 @@ function Machines() {
         <Stat label="Rejects / min" value={live.reduce((a, x) => a + x.r.rejects, 0)} tone="warn" />
         <Stat label="Down" value={shown.filter((m) => m.status === "down").length} tone="bad" />
       </div>
-      <div className="grid grid-cols-2 gap-4 px-8 pb-8 xl:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 px-8 pb-8 lg:grid-cols-2 xl:grid-cols-3">
         {live.map(({ m, r }) => <MachineCard key={m.id} m={m} now={now} r={r} />)}
       </div>
       <ConnectDialog open={open} onOpenChange={setOpen} />
@@ -72,7 +72,10 @@ function Machines() {
 
 function MachineCard({ m, now, r }: { m: Machine; now: number; r: ReturnType<typeof readingAt> }) {
   const qc = useQueryClient();
-  const data = history(m.id, Number(m.nominal_speed), m.status, now);
+  const data = history(m.id, Number(m.nominal_speed), m.status, now).map((reading) => ({
+    ...reading,
+    secondsAgo: (reading.t - now) / 1000,
+  }));
   const setStatus = useMutation({
     mutationFn: async (status: string) => {
       const { error } = await supabase.rpc("set_machine_status", { p_machine: m.id, p_status: status });
@@ -97,10 +100,29 @@ function MachineCard({ m, now, r }: { m: Machine; now: number; r: ReturnType<typ
           <option value="running">Running</option><option value="idle">Idle</option><option value="down">Down</option>
         </select>
       </div>
-      <div className="mt-3 h-14">
+      <div className="mt-4 text-xs font-medium">Machine speed</div>
+      <div className="mt-2 h-40" role="img" aria-label={`${m.name}: machine speed in units per minute over the last 78 seconds`}>
         <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={data}>
-            <YAxis hide domain={[0, Number(m.nominal_speed) * 1.1]} />
+          <LineChart data={data} margin={{ top: 8, right: 14, bottom: 20, left: 8 }}>
+            <YAxis
+              domain={[0, Math.ceil(Number(m.nominal_speed) * 1.1)]}
+              width={55}
+              tick={{ fill: "var(--color-muted-foreground)", fontSize: 10 }}
+              stroke="var(--color-border)"
+              allowDecimals={false}
+              tickCount={3}
+              label={{ value: "Units/min", angle: -90, position: "insideLeft", fill: "var(--color-muted-foreground)", fontSize: 10 }}
+            />
+            <XAxis
+              dataKey="secondsAgo"
+              type="number"
+              domain={[-78, 0]}
+              ticks={[-78, -40, 0]}
+              tickFormatter={(seconds) => seconds === 0 ? "Now" : `${Math.abs(seconds)} s`}
+              tick={{ fill: "var(--color-muted-foreground)", fontSize: 10 }}
+              stroke="var(--color-border)"
+              label={{ value: "Time (seconds ago)", position: "bottom", offset: 4, fill: "var(--color-muted-foreground)", fontSize: 10 }}
+            />
             <Line type="monotone" dataKey="speed" stroke="var(--color-primary)" strokeWidth={1.5} dot={false} isAnimationActive={false} />
           </LineChart>
         </ResponsiveContainer>
