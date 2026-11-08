@@ -5,6 +5,6 @@
 - [x] Add account-saved AI conversations with follow-up replies.
 - [x] Add activity-based time and money savings with editable assumptions.
 - [x] Verify two conversations, history restoration, savings calculations and access.
-- [ ] Add CP-4 sample paperwork without counting it as savings.
-- [ ] Add private photo/video analysis and voice-note transcription.
-- [ ] Save reviewed repairs for the assigned machine team and verify access.
+- [x] Add CP-4 sample paperwork without counting it as savings.
+- [x] Add private photo/video analysis and voice-note transcription.
+- [x] Save reviewed repairs for the assigned machine team and verify access.

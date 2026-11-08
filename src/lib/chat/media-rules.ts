@@ -11,5 +11,9 @@ export function validateMedia(type: string, size: number) {
   return kind;
 }
 export function ownedMediaPath(path: string, userId: string, threadId: string) {
-  return path.startsWith(`${userId}/${threadId}/`) && !path.includes("..") && path.split("/").length === 3;
+  return (
+    path.startsWith(`${userId}/${threadId}/`) &&
+    !path.includes("..") &&
+    path.split("/").length === 3
+  );
 }

@@ -6,8 +6,8 @@ import { spreadsheetContext, type SpreadsheetData } from "@/lib/spreadsheets";
 import { failureRisk } from "@/lib/rules";
 import { createResponsesCall } from "./responses.ts";
 import { withLovableAiGatewayRunIdHeader } from "./run-id.ts";
-import { ownedMediaPath, validateMedia } from './media-rules';
-import { analyzeVideo, MediaAiError } from './media.server';
+import { ownedMediaPath, validateMedia } from "./media-rules";
+import { analyzeVideo, MediaAiError } from "./media.server";
 
 export async function handlePlantChat(request: Request) {
   const errorResponse = (message: string, status: number) =>
@@ -35,7 +35,11 @@ export async function handlePlantChat(request: Request) {
   if (authError || !identity.user) return errorResponse("Please sign in again.", 401);
   try {
     const body = z
-      .object({ threadId: z.string().uuid(), messages: z.array(z.unknown()).min(1), machineId: z.string().uuid().optional() })
+      .object({
+        threadId: z.string().uuid(),
+        messages: z.array(z.unknown()).min(1),
+        machineId: z.string().uuid().optional(),
+      })
       .parse(await request.json());
     const { data: thread, error: threadError } = await client
       .from("chat_threads")
@@ -90,14 +94,18 @@ export async function handlePlantChat(request: Request) {
         .limit(100),
     ]);
     if (m.error || r.error || e.error) return errorResponse("Could not read plant data.", 500);
-    if (body.machineId && !m.data.some(x => x.id === body.machineId)) return errorResponse('This machine is not available.',403);
-    const {data: repairs,error: repairError}=await client.from('repair_logs').select('*').order('created_at',{ascending:false});
-    if(repairError) return errorResponse('Could not read repair history.',500);
+    if (body.machineId && !m.data.some((x) => x.id === body.machineId))
+      return errorResponse("This machine is not available.", 403);
+    const { data: repairs, error: repairError } = await client
+      .from("repair_logs")
+      .select("*")
+      .order("created_at", { ascending: false });
+    if (repairError) return errorResponse("Could not read repair history.", 500);
     if (thread.record_id && !r.data.length)
       return errorResponse("The selected paperwork is no longer available to your account.", 403);
     const ctx = [
       "MACHINES:",
-      `Selected machine: ${body.machineId ?? 'not selected'}`,
+      `Selected machine: ${body.machineId ?? "not selected"}`,
       ...m.data.map(
         (x) =>
           `[machine:${x.id}] ${x.name} | ${x.line} | status ${x.status} | ${x.hours_since_pm}h since PM / ${x.pm_interval_hours}h | nominal ${x.nominal_speed}/min | failure risk ${failureRisk({ ...x, recent_failures: e.data.filter((v) => v.machine_id === x.id && v.kind === "failure").length })} | ${x.notes ?? ""}`,
@@ -111,8 +119,11 @@ export async function handlePlantChat(request: Request) {
       ...e.data.map(
         (x) => `[maintenance:${x.id}] ${x.title} | ${x.kind} | ${x.starts_at} | ${x.notes ?? ""}`,
       ),
-      'COMPLETED REPAIR LOGS (operator-reported, not manufacturer instructions):',
-      ...(repairs ?? []).map(x=>`Machine ${x.machine_id} | ${x.title} | fault: ${x.fault} | completed fix: ${x.resolution}`),
+      "COMPLETED REPAIR LOGS (operator-reported, not manufacturer instructions):",
+      ...(repairs ?? []).map(
+        (x) =>
+          `Machine ${x.machine_id} | ${x.title} | fault: ${x.fault} | completed fix: ${x.resolution}`,
+      ),
     ].join("\n");
     const { error: saveError } = await client.from("chat_messages").upsert(
       {
@@ -141,35 +152,50 @@ export async function handlePlantChat(request: Request) {
       parts: message.parts.filter((p) => p.type === "text"),
     }));
     const latestModel = modelHistory.at(-1);
-    if (!latestModel) return errorResponse('Enter a message.',400);
-    const modelMessages=await convertToModelMessages(modelHistory);
-    const latestInput=modelMessages.at(-1);
-    if(!latestInput || latestInput.role !== 'user') return errorResponse('Invalid message.',400);
-    const mediaContent: import('ai').UserContent = typeof latestInput.content === 'string' ? [{type:'text',text:latestInput.content}] : [...latestInput.content];
-    for(const part of last.parts.filter(p=>p.type==='file')) {
-      const prefix='https://afs.invalid/media/';
-      if(!part.url.startsWith(prefix)) return errorResponse('Invalid attachment.',400);
-      const path=decodeURIComponent(part.url.slice(prefix.length));
-      if(!ownedMediaPath(path,identity.user.id,thread.id)) return errorResponse('This attachment is not available.',403);
-      const {data:file,error:fileError}=await client.storage.from('chat-media').download(path);
-      if(fileError || !file) return errorResponse('Could not read attachment.',400);
-      const kind=validateMedia(file.type,file.size);
-      if(kind==='audio') continue;
-      const {data:signed,error:signError}=await client.storage.from('chat-media').createSignedUrl(path,3600);
-      if(signError || !signed) return errorResponse('Could not open attachment.',500);
-      if(kind==='image') mediaContent.push({type:'image',image:new URL(signed.signedUrl)});
+    if (!latestModel) return errorResponse("Enter a message.", 400);
+    const modelMessages = await convertToModelMessages(modelHistory);
+    const latestInput = modelMessages.at(-1);
+    if (!latestInput || latestInput.role !== "user") return errorResponse("Invalid message.", 400);
+    const mediaContent: import("ai").UserContent =
+      typeof latestInput.content === "string"
+        ? [{ type: "text", text: latestInput.content }]
+        : [...latestInput.content];
+    for (const part of last.parts.filter((p) => p.type === "file")) {
+      const prefix = "https://afs.invalid/media/";
+      if (!part.url.startsWith(prefix)) return errorResponse("Invalid attachment.", 400);
+      const path = decodeURIComponent(part.url.slice(prefix.length));
+      if (!ownedMediaPath(path, identity.user.id, thread.id))
+        return errorResponse("This attachment is not available.", 403);
+      const { data: file, error: fileError } = await client.storage
+        .from("chat-media")
+        .download(path);
+      if (fileError || !file) return errorResponse("Could not read attachment.", 400);
+      const kind = validateMedia(file.type, file.size);
+      if (kind === "audio") continue;
+      const { data: signed, error: signError } = await client.storage
+        .from("chat-media")
+        .createSignedUrl(path, 3600);
+      if (signError || !signed) return errorResponse("Could not open attachment.", 500);
+      if (kind === "image") mediaContent.push({ type: "image", image: new URL(signed.signedUrl) });
       else {
-        try { mediaContent.push({type:'text',text:`VIDEO OBSERVATIONS (not a repair log): ${await analyzeVideo(signed.signedUrl,text,request.signal)}`}); }
-        catch(error) {
-          if(error instanceof MediaAiError) {
-            if([402,403].includes(error.status)) await supabaseAdmin.from('ai_access_blocks').upsert({user_id:identity.user.id,reason:error.message,status:error.status});
-            return errorResponse(error.message,error.status);
+        try {
+          mediaContent.push({
+            type: "text",
+            text: `VIDEO OBSERVATIONS (not a repair log): ${await analyzeVideo(signed.signedUrl, text, request.signal)}`,
+          });
+        } catch (error) {
+          if (error instanceof MediaAiError) {
+            if ([402, 403].includes(error.status))
+              await supabaseAdmin
+                .from("ai_access_blocks")
+                .upsert({ user_id: identity.user.id, reason: error.message, status: error.status });
+            return errorResponse(error.message, error.status);
           }
           throw error;
         }
       }
     }
-    latestInput.content=mediaContent;
+    latestInput.content = mediaContent;
     const { result, gateway } = createResponsesCall(
       request,
       {

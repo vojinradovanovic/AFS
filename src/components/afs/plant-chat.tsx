@@ -8,7 +8,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import type { Json } from "@/integrations/supabase/types";
 import { accessQuery, recordsQuery, machinesQuery } from "@/lib/queries";
-import { ChatMedia, MediaPreview, type ChatAttachment } from './chat-media';
+import { ChatMedia, MediaPreview, type ChatAttachment } from "./chat-media";
 import { threadsQuery } from "@/lib/chat/queries";
 import { Button } from "@/components/ui/button";
 import {
@@ -164,9 +164,9 @@ function ChatWindow({
   initialMessages: UIMessage[];
 }) {
   const [input, setInput] = useState("");
-  const {data:machines}=useSuspenseQuery(machinesQuery);
-  const [machineId,setMachineId]=useState(machines.length===1 ? machines[0]?.id ?? '' : '');
-  const [attachments,setAttachments]=useState<ChatAttachment[]>([]);
+  const { data: machines } = useSuspenseQuery(machinesQuery);
+  const [machineId, setMachineId] = useState(machines.length === 1 ? (machines[0]?.id ?? "") : "");
+  const [attachments, setAttachments] = useState<ChatAttachment[]>([]);
   const textarea = useRef<HTMLTextAreaElement>(null);
   const cancelSaved = useRef(false);
   const qc = useQueryClient();
@@ -180,7 +180,7 @@ function ChatWindow({
           return data.session ? { Authorization: `Bearer ${data.session.access_token}` } : {};
         },
       }),
-    [threadId,machineId],
+    [threadId, machineId],
   );
   const { messages, sendMessage, status, error, stop } = useChat({
     id: threadId,
@@ -246,7 +246,9 @@ function ChatWindow({
                       <ReasoningTrigger />
                       <ReasoningContent>{p.text}</ReasoningContent>
                     </Reasoning>
-                  ) : p.type === 'file' ? <MediaPreview key={i} file={{...p,filename:p.filename ?? 'Attachment'}}/> : null,
+                  ) : p.type === "file" ? (
+                    <MediaPreview key={i} file={{ ...p, filename: p.filename ?? "Attachment" }} />
+                  ) : null,
                 )}
                 {m.role === "assistant" && !busy && (
                   <Button
@@ -276,8 +278,27 @@ function ChatWindow({
         <ConversationScrollButton />
       </Conversation>
       <div className="mx-auto w-full max-w-4xl px-6 pb-6">
-        <select aria-label="Fault machine" value={machineId} onChange={e=>setMachineId(e.target.value)} disabled={busy} className="mb-3 w-full rounded-md border border-input bg-panel px-3 py-2 text-sm"><option value="">Select machine for fault analysis</option>{machines.map(m=><option key={m.id} value={m.id}>{m.name}</option>)}</select>
-        {attachments.map((file,i)=><MediaPreview key={file.url} file={file} onRemove={()=>setAttachments(files=>files.filter((_,index)=>index!==i))}/>)}
+        <select
+          aria-label="Fault machine"
+          value={machineId}
+          onChange={(e) => setMachineId(e.target.value)}
+          disabled={busy}
+          className="mb-3 w-full rounded-md border border-input bg-panel px-3 py-2 text-sm"
+        >
+          <option value="">Select machine for fault analysis</option>
+          {machines.map((m) => (
+            <option key={m.id} value={m.id}>
+              {m.name}
+            </option>
+          ))}
+        </select>
+        {attachments.map((file, i) => (
+          <MediaPreview
+            key={file.url}
+            file={file}
+            onRemove={() => setAttachments((files) => files.filter((_, index) => index !== i))}
+          />
+        ))}
         {error && (
           <p role="alert" className="mb-3 text-sm text-destructive">
             {error.message}
@@ -289,7 +310,8 @@ function ChatWindow({
             const text = input;
             cancelSaved.current = false;
             setInput("");
-            const files=attachments;setAttachments([]);
+            const files = attachments;
+            setAttachments([]);
             await sendMessage({ text, files });
             textarea.current?.focus();
           }}
@@ -303,7 +325,16 @@ function ChatWindow({
             className="min-h-20"
           />
           <PromptInputFooter className="justify-between">
-            <ChatMedia threadId={threadId} machines={machines} machineId={machineId} onMachine={setMachineId} onAttachment={file=>setAttachments([file])} onTranscript={text=>setInput(value=>value ? `${value}\n${text}` : text)} input={input} busy={busy}/>
+            <ChatMedia
+              threadId={threadId}
+              machines={machines}
+              machineId={machineId}
+              onMachine={setMachineId}
+              onAttachment={(file) => setAttachments([file])}
+              onTranscript={(text) => setInput((value) => (value ? `${value}\n${text}` : text))}
+              input={input}
+              busy={busy}
+            />
             <PromptInputSubmit
               size="icon-sm"
               status={status}
