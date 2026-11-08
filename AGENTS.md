@@ -28,3 +28,9 @@ use the editor.
   own key and store it in Secrets.
 - **Secrets.** Lovable manages them. Do not put secret values in the repo.
 <!-- LOVABLE:END -->
+
+## AFS architecture
+- All plant data (machines, paper_records, maintenance_events) is owner-scoped by `owner_id = auth.uid()` RLS; new users get a sample plant via the `seed_sample_plant` trigger on signup, so the app is never empty.
+- Pure plant rules (out-of-range flags, failure risk) live in `src/lib/rules.ts` with tests; UI and AI code must call these rather than re-implementing thresholds.
+- Live machine readings come from `src/lib/telemetry.ts` (simulated) until real PLC connectors exist; replace that module's source, not the pages.
+- AI calls (search, paper-form scanning) are authenticated server functions in `src/lib/ai.functions.ts`; gateway setup stays in `src/lib/ai.server.ts`.
