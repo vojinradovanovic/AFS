@@ -1,4 +1,4 @@
-- [ ] Remove example codes and apply a light, light-blue theme.
-- [ ] Add shared plants, manager invitations and machine-scoped operator access.
-- [ ] Add Excel paperwork imports and source-backed AI questions.
-- [ ] Verify manager and operator flows, uploads, tests and page health.
+- [x] Remove example codes and apply a light, light-blue theme.
+- [x] Add shared plants, manager invitations and machine-scoped operator access.
+- [x] Add Excel paperwork imports and source-backed AI questions.
+- [x] Verify manager and operator flows, uploads, tests and page health.
