@@ -4,12 +4,14 @@ import { accessQuery, eventsQuery, machinesQuery, recordsQuery } from "@/lib/que
 import { failureRisk, riskLevel } from "@/lib/rules";
 import { PageHeader, Stat, StatusDot, headMeta } from "@/components/afs/page";
 import { homeTitle, type PlantRole } from "@/lib/access";
+import { SavingsSummary } from "@/components/afs/savings-summary";
+import { savingsQuery } from "@/lib/savings.queries";
 import { ArrowRight } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/overview")({
   head: () => headMeta("Overview", "Plant overview: flagged paperwork, machine status and maintenance risk."),
   loader: ({ context }) =>
-    Promise.all([context.queryClient.ensureQueryData(machinesQuery), context.queryClient.ensureQueryData(recordsQuery), context.queryClient.ensureQueryData(eventsQuery)]),
+    Promise.all([context.queryClient.ensureQueryData(machinesQuery), context.queryClient.ensureQueryData(recordsQuery), context.queryClient.ensureQueryData(eventsQuery), context.queryClient.ensureQueryData(savingsQuery)]),
   component: Overview,
 });
 
@@ -35,6 +37,7 @@ function Overview() {
         <Stat label="Flagged entries" value={flagged.length} tone="warn" />
         <Stat label="High failure risk" value={high.length} tone={high.length ? "bad" : "good"} />
       </div>
+      <SavingsSummary />
       <div className="grid grid-cols-2 gap-4 px-8 pb-8">
         <section className="panel">
           <div className="flex items-center justify-between border-b border-border px-4 py-3"><h2 className="text-sm font-semibold">Flagged paperwork</h2><Link to="/paperwork" className="tag flex items-center gap-1 hover:text-foreground">Open <ArrowRight className="size-3" /></Link></div>

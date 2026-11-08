@@ -1,5 +1,5 @@
 import { createFileRoute, Link, Outlet, redirect, useRouterState, useNavigate } from "@tanstack/react-router";
-import { ClipboardList, Activity, Search, Wrench, LayoutGrid, LogOut, Users } from "lucide-react";
+import { ClipboardList, Activity, Search, Wrench, LayoutGrid, LogOut, Users, TrendingUp } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { accessQuery } from "@/lib/queries";
@@ -23,6 +23,7 @@ const nav = [
   { to: "/paperwork", label: "Paperwork", icon: ClipboardList },
   { to: "/machines", label: "Live machine data", icon: Activity },
   { to: "/search", label: "AI search", icon: Search },
+  { to: "/savings", label: "Savings", icon: TrendingUp },
   { to: "/maintenance", label: "Predictive maintenance", icon: Wrench },
   { to: "/team", label: "Team", icon: Users },
 ] as const;

@@ -36,3 +36,6 @@ use the editor.
 - AI calls (search, paper-form scanning) are authenticated server functions in `src/lib/ai.functions.ts`; gateway setup stays in `src/lib/ai.server.ts`.
 - Excel workbooks are parsed in the browser and saved as spreadsheet paper_records with sheets and row numbers; AI search selects a workbook explicitly to avoid silently truncating spreadsheet context.
 - Operator invitations use email-bound, expiring tokens and database-authorized acceptance; invitation links are shared by managers, not automatically emailed.
+- Saved chat uses route-derived thread IDs, account/plant-scoped RLS, AI SDK UIMessage parts and an authenticated streaming HTTP boundary; only verified server completions count as AI savings activity.
+- Savings use a separate activity ledger for new saved paperwork and successful AI answers, excluding seeded/history records; pure estimation formulas live in src/lib/savings.ts with tests.
+- Chat reload retains reasoning UI parts, but model replay uses complete plain-text history to avoid deployment-bound encrypted reasoning references; streaming message IDs are explicitly generated to prevent reply overwrites.

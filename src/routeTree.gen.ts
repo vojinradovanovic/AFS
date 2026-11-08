@@ -17,8 +17,11 @@ import { Route as AuthenticatedMachinesRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedMaintenanceRouteImport } from './routes/_authenticated/maintenance'
 import { Route as AuthenticatedOverviewRouteImport } from './routes/_authenticated/overview'
 import { Route as AuthenticatedPaperworkRouteImport } from './routes/_authenticated/paperwork'
+import { Route as AuthenticatedSavingsRouteImport } from './routes/_authenticated/savings'
 import { Route as AuthenticatedSearchRouteImport } from './routes/_authenticated/search'
 import { Route as AuthenticatedTeamRouteImport } from './routes/_authenticated/team'
+import { Route as ApiChatRouteImport } from './routes/api/chat'
+import { Route as AuthenticatedSearchThreadIdRouteImport } from './routes/_authenticated/search_.$threadId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -60,6 +63,11 @@ const AuthenticatedPaperworkRoute = AuthenticatedPaperworkRouteImport.update({
   path: '/paperwork',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedSavingsRoute = AuthenticatedSavingsRouteImport.update({
+  id: '/savings',
+  path: '/savings',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedSearchRoute = AuthenticatedSearchRouteImport.update({
   id: '/search',
   path: '/search',
@@ -70,6 +78,17 @@ const AuthenticatedTeamRoute = AuthenticatedTeamRouteImport.update({
   path: '/team',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const ApiChatRoute = ApiChatRouteImport.update({
+  id: '/api/chat',
+  path: '/api/chat',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedSearchThreadIdRoute =
+  AuthenticatedSearchThreadIdRouteImport.update({
+    id: '/search_/$threadId',
+    path: '/search/$threadId',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -79,8 +98,11 @@ export interface FileRoutesByFullPath {
   '/maintenance': typeof AuthenticatedMaintenanceRoute
   '/overview': typeof AuthenticatedOverviewRoute
   '/paperwork': typeof AuthenticatedPaperworkRoute
+  '/savings': typeof AuthenticatedSavingsRoute
   '/search': typeof AuthenticatedSearchRoute
   '/team': typeof AuthenticatedTeamRoute
+  '/api/chat': typeof ApiChatRoute
+  '/search/$threadId': typeof AuthenticatedSearchThreadIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -90,8 +112,11 @@ export interface FileRoutesByTo {
   '/maintenance': typeof AuthenticatedMaintenanceRoute
   '/overview': typeof AuthenticatedOverviewRoute
   '/paperwork': typeof AuthenticatedPaperworkRoute
+  '/savings': typeof AuthenticatedSavingsRoute
   '/search': typeof AuthenticatedSearchRoute
   '/team': typeof AuthenticatedTeamRoute
+  '/api/chat': typeof ApiChatRoute
+  '/search/$threadId': typeof AuthenticatedSearchThreadIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -103,8 +128,11 @@ export interface FileRoutesById {
   '/_authenticated/maintenance': typeof AuthenticatedMaintenanceRoute
   '/_authenticated/overview': typeof AuthenticatedOverviewRoute
   '/_authenticated/paperwork': typeof AuthenticatedPaperworkRoute
+  '/_authenticated/savings': typeof AuthenticatedSavingsRoute
   '/_authenticated/search': typeof AuthenticatedSearchRoute
   '/_authenticated/team': typeof AuthenticatedTeamRoute
+  '/api/chat': typeof ApiChatRoute
+  '/_authenticated/search_/$threadId': typeof AuthenticatedSearchThreadIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -116,8 +144,11 @@ export interface FileRouteTypes {
     | '/maintenance'
     | '/overview'
     | '/paperwork'
+    | '/savings'
     | '/search'
     | '/team'
+    | '/api/chat'
+    | '/search/$threadId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -127,8 +158,11 @@ export interface FileRouteTypes {
     | '/maintenance'
     | '/overview'
     | '/paperwork'
+    | '/savings'
     | '/search'
     | '/team'
+    | '/api/chat'
+    | '/search/$threadId'
   id:
     | '__root__'
     | '/'
@@ -139,8 +173,11 @@ export interface FileRouteTypes {
     | '/_authenticated/maintenance'
     | '/_authenticated/overview'
     | '/_authenticated/paperwork'
+    | '/_authenticated/savings'
     | '/_authenticated/search'
     | '/_authenticated/team'
+    | '/api/chat'
+    | '/_authenticated/search_/$threadId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -148,6 +185,7 @@ export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
   InviteRoute: typeof InviteRoute
+  ApiChatRoute: typeof ApiChatRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -208,6 +246,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedPaperworkRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/savings': {
+      id: '/_authenticated/savings'
+      path: '/savings'
+      fullPath: '/savings'
+      preLoaderRoute: typeof AuthenticatedSavingsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/search': {
       id: '/_authenticated/search'
       path: '/search'
@@ -222,6 +267,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedTeamRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/api/chat': {
+      id: '/api/chat'
+      path: '/api/chat'
+      fullPath: '/api/chat'
+      preLoaderRoute: typeof ApiChatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/search_/$threadId': {
+      id: '/_authenticated/search_/$threadId'
+      path: '/search/$threadId'
+      fullPath: '/search/$threadId'
+      preLoaderRoute: typeof AuthenticatedSearchThreadIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
   }
 }
 
@@ -230,8 +289,10 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedMaintenanceRoute: typeof AuthenticatedMaintenanceRoute
   AuthenticatedOverviewRoute: typeof AuthenticatedOverviewRoute
   AuthenticatedPaperworkRoute: typeof AuthenticatedPaperworkRoute
+  AuthenticatedSavingsRoute: typeof AuthenticatedSavingsRoute
   AuthenticatedSearchRoute: typeof AuthenticatedSearchRoute
   AuthenticatedTeamRoute: typeof AuthenticatedTeamRoute
+  AuthenticatedSearchThreadIdRoute: typeof AuthenticatedSearchThreadIdRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
@@ -239,8 +300,10 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedMaintenanceRoute: AuthenticatedMaintenanceRoute,
   AuthenticatedOverviewRoute: AuthenticatedOverviewRoute,
   AuthenticatedPaperworkRoute: AuthenticatedPaperworkRoute,
+  AuthenticatedSavingsRoute: AuthenticatedSavingsRoute,
   AuthenticatedSearchRoute: AuthenticatedSearchRoute,
   AuthenticatedTeamRoute: AuthenticatedTeamRoute,
+  AuthenticatedSearchThreadIdRoute: AuthenticatedSearchThreadIdRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
@@ -251,6 +314,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
   InviteRoute: InviteRoute,
+  ApiChatRoute: ApiChatRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

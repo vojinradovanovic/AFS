@@ -14,6 +14,103 @@ export type Database = {
   }
   public: {
     Tables: {
+      ai_access_blocks: {
+        Row: {
+          created_at: string
+          reason: string
+          status: number
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          reason: string
+          status: number
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          reason?: string
+          status?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
+      chat_messages: {
+        Row: {
+          completed: boolean
+          created_at: string
+          id: string
+          parts: Json
+          role: string
+          sdk_id: string
+          thread_id: string
+        }
+        Insert: {
+          completed?: boolean
+          created_at?: string
+          id?: string
+          parts?: Json
+          role: string
+          sdk_id: string
+          thread_id: string
+        }
+        Update: {
+          completed?: boolean
+          created_at?: string
+          id?: string
+          parts?: Json
+          role?: string
+          sdk_id?: string
+          thread_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_messages_thread_id_fkey"
+            columns: ["thread_id"]
+            isOneToOne: false
+            referencedRelation: "chat_threads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      chat_threads: {
+        Row: {
+          created_at: string
+          id: string
+          plant_owner_id: string
+          record_id: string | null
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          plant_owner_id: string
+          record_id?: string | null
+          title?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          plant_owner_id?: string
+          record_id?: string | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_threads_record_id_fkey"
+            columns: ["record_id"]
+            isOneToOne: false
+            referencedRelation: "paper_records"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       machine_assignments: {
         Row: {
           machine_id: string
@@ -220,6 +317,66 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      savings_activity: {
+        Row: {
+          actor_id: string
+          created_at: string
+          id: string
+          kind: string
+          machine_id: string | null
+          plant_owner_id: string
+          source_id: string
+        }
+        Insert: {
+          actor_id: string
+          created_at?: string
+          id?: string
+          kind: string
+          machine_id?: string | null
+          plant_owner_id: string
+          source_id: string
+        }
+        Update: {
+          actor_id?: string
+          created_at?: string
+          id?: string
+          kind?: string
+          machine_id?: string | null
+          plant_owner_id?: string
+          source_id?: string
+        }
+        Relationships: []
+      }
+      savings_settings: {
+        Row: {
+          ai_minutes: number
+          currency: string
+          hourly_cost: number
+          monthly_service_cost: number
+          paperwork_minutes: number
+          plant_owner_id: string
+          tracking_started_at: string
+        }
+        Insert: {
+          ai_minutes?: number
+          currency?: string
+          hourly_cost?: number
+          monthly_service_cost?: number
+          paperwork_minutes?: number
+          plant_owner_id: string
+          tracking_started_at?: string
+        }
+        Update: {
+          ai_minutes?: number
+          currency?: string
+          hourly_cost?: number
+          monthly_service_cost?: number
+          paperwork_minutes?: number
+          plant_owner_id?: string
+          tracking_started_at?: string
+        }
+        Relationships: []
       }
       user_roles: {
         Row: {

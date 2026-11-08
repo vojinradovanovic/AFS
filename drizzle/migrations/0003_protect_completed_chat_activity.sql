@@ -1,0 +1,5 @@
+DROP POLICY own_messages ON public.chat_messages;
+CREATE POLICY read_own_messages ON public.chat_messages FOR SELECT TO authenticated USING (EXISTS (SELECT 1 FROM public.chat_threads t WHERE t.id = chat_messages.thread_id));
+CREATE POLICY insert_own_unverified_messages ON public.chat_messages FOR INSERT TO authenticated WITH CHECK (NOT completed AND EXISTS (SELECT 1 FROM public.chat_threads t WHERE t.id = chat_messages.thread_id));
+CREATE POLICY update_own_unverified_messages ON public.chat_messages FOR UPDATE TO authenticated USING (NOT completed AND EXISTS (SELECT 1 FROM public.chat_threads t WHERE t.id = chat_messages.thread_id)) WITH CHECK (NOT completed AND EXISTS (SELECT 1 FROM public.chat_threads t WHERE t.id = chat_messages.thread_id));
+CREATE POLICY delete_own_messages ON public.chat_messages FOR DELETE TO authenticated USING (EXISTS (SELECT 1 FROM public.chat_threads t WHERE t.id = chat_messages.thread_id));

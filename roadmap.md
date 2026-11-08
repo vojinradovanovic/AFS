@@ -2,3 +2,6 @@
 - [x] Add shared plants, manager invitations and machine-scoped operator access.
 - [x] Add Excel paperwork imports and source-backed AI questions.
 - [x] Verify manager and operator flows, uploads, tests and page health.
+- [x] Add account-saved AI conversations with follow-up replies.
+- [x] Add activity-based time and money savings with editable assumptions.
+- [x] Verify two conversations, history restoration, savings calculations and access.

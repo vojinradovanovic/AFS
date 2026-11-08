@@ -15,6 +15,20 @@
       "when": 1794135288407,
       "tag": "0001_shared_plant_roles_and_invitations",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1794137959574,
+      "tag": "0002_afs_chat_threads_and_savings",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1794138017241,
+      "tag": "0003_protect_completed_chat_activity",
+      "breakpoints": true
     }
   ]
 }
